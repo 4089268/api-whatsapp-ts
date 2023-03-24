@@ -16,6 +16,11 @@ class LeadCtrl {
     res.send(response);
   };
 
+  public getQR = ( { body }: Request, res: Response) => {
+    const pathQr = `${process.cwd()}/tmp/qr.svg`;
+    res.sendFile( pathQr );
+  }
+
 }
 
 export default LeadCtrl;
