@@ -21,4 +21,18 @@ export class LeadCreate {
     const responseExSave = await this.leadExternal.sendMsg({ message, phone });//TODO enviar a ws
     return {responseDbSave, responseExSave};
   }
+
+  public async sendUrlAndSave({
+    url,
+    phone,
+  }: {
+    url: string;
+    phone: string;
+  }) {
+    const responseDbSave = await this.leadRepository.save({ message : url, phone });//TODO DB
+    const responseExSave = await this.leadExternal.sendUrlMedia({ url, phone });//TODO enviar a ws
+    return {responseDbSave, responseExSave};
+  }
+
+
 }

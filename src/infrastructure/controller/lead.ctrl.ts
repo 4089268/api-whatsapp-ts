@@ -9,6 +9,13 @@ class LeadCtrl {
     const response = await this.leadCreator.sendMessageAndSave({ message, phone })
     res.send(response);
   };
+
+  public sendUrlCtrl = async ({ body }: Request, res: Response) => {
+    const { url, phone } = body;
+    const response = await this.leadCreator.sendUrlAndSave({url, phone })
+    res.send(response);
+  };
+
 }
 
 export default LeadCtrl;

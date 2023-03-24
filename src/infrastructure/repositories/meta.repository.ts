@@ -7,6 +7,9 @@ const META_ID_NUMBER = process.env.META_ID_NUMBER || "";
 const URL = `https://graph.facebook.com/v13.0/${META_ID_NUMBER}/messages`;
 
 export default class MetaRepository implements LeadExternal {
+  sendUrlMedia({ url, phone }: { url: string; phone: string; }): Promise<any> {
+    throw new Error("Method not implemented.");
+  }
   async sendMsg({
     message,
     phone,

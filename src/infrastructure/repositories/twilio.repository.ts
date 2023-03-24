@@ -10,6 +10,9 @@ export default class TwilioService extends Twilio implements LeadExternal {
   constructor() {
     super(accountSid, authToken);
   }
+  sendUrlMedia({ url, phone }: { url: string; phone: string; }): Promise<any> {
+    throw new Error("Method not implemented.");
+  }
   async sendMsg({
     message,
     phone,

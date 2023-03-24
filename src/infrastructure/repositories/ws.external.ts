@@ -1,4 +1,4 @@
-import { Client, LocalAuth } from "whatsapp-web.js";
+import { Client, LocalAuth, MessageMedia, MediaFromURLOptions } from "whatsapp-web.js";
 import { image as imageQr } from "qr-image";
 import LeadExternal from "../../domain/lead-external.repository";
 
@@ -33,6 +33,15 @@ class WsTransporter extends Client implements LeadExternal {
       this.generateImage(qr)
     });
   }
+  async sendUrlMedia({ url, phone }: { url: string; phone: string; }): Promise<any> {
+    try {
+      const media = await MessageMedia.fromUrl(url, {unsafeMime:true});
+      const response = await this.sendMessage(`${phone}@c.us`, media );
+      return { id: response.id.id };
+    }catch(e:any){
+      return Promise.resolve({error:e.message});
+    }
+  }
 
   /**
    * Enviar mensaje de WS
@@ -43,6 +52,12 @@ class WsTransporter extends Client implements LeadExternal {
     try {
       if (!this.status) return Promise.resolve({ error: "WAIT_LOGIN" });
       const { message, phone } = lead;
+      
+      // Pruebas enviar documento adjunto
+      // const path = `${process.cwd()}/tmp`;
+      // const media = await MessageMedia.fromFilePath(path + "/Curp_JuanSalvador.pdf");
+      // const response = await this.sendMessage(`${phone}@c.us`, media );
+      
       const response = await this.sendMessage(`${phone}@c.us`, message);
       return { id: response.id.id };
     } catch (e: any) {
