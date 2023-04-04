@@ -1,12 +1,14 @@
 import { Client, LocalAuth, MessageMedia, MediaFromURLOptions } from "whatsapp-web.js";
 import { image as imageQr } from "qr-image";
 import LeadExternal from "../../domain/lead-external.repository";
+import { idText } from "typescript";
 
 /**
  * Extendemos los super poderes de whatsapp-web
  */
 class WsTransporter extends Client implements LeadExternal {
   private status = false;
+  private usuario : string | undefined = undefined;
 
   constructor() {
     super({
@@ -18,8 +20,9 @@ class WsTransporter extends Client implements LeadExternal {
 
     this.initialize();
 
-    this.on("ready", () => {
+    this.on("ready", async () => {
       this.status = true;
+      this.usuario = this.info.wid.user;
       console.log("LOGIN_SUCCESS");
     });
 
@@ -33,6 +36,7 @@ class WsTransporter extends Client implements LeadExternal {
       this.generateImage(qr)
     });
   }
+
   async sendUrlMedia({ url, phone }: { url: string; phone: string; }): Promise<any> {
     try {
       const media = await MessageMedia.fromUrl(url, {unsafeMime:true});
@@ -53,13 +57,9 @@ class WsTransporter extends Client implements LeadExternal {
       if (!this.status) return Promise.resolve({ error: "WAIT_LOGIN" });
       const { message, phone } = lead;
       
-      // Pruebas enviar documento adjunto
-      // const path = `${process.cwd()}/tmp`;
-      // const media = await MessageMedia.fromFilePath(path + "/Curp_JuanSalvador.pdf");
-      // const response = await this.sendMessage(`${phone}@c.us`, media );
-      
       const response = await this.sendMessage(`${phone}@c.us`, message);
-      return { id: response.id.id };
+      console.log("id:" + response.id.id);
+      return { id: response.id.id, from: this.usuario };
     } catch (e: any) {
       return Promise.resolve({ error: e.message });
     }
@@ -67,6 +67,10 @@ class WsTransporter extends Client implements LeadExternal {
 
   getStatus(): boolean {
     return this.status;
+  }
+
+  getUserPhone() : string|undefined {
+    return this.usuario;
   }
 
   private generateImage = (base64: string) => {

@@ -4,7 +4,7 @@ import settings from '../../domain/config'
 import { MensajeModel } from "../../domain/mensajeModel";
 import sql from 'mssql';
 import { stringify } from "uuid";
-import { ExecutionListInstanceOptions } from "twilio/lib/rest/studio/v1/flow/execution";
+
 
 class MockRepository implements LeadRepository {
 
@@ -12,21 +12,22 @@ class MockRepository implements LeadRepository {
       throw new Error("Method not implemented.");
   }
 
-  async save( id: string | undefined, mensajeInfo : MensajeModel ): Promise<Lead> {
+  async save( id: string | undefined, mensajeInfo : MensajeModel ): Promise<{id:string, mensaje:MensajeModel} | string> {
+    
     // Genear query
-    var _query : string[] = [];
-    _query.push("Exec [dbo].[usp_envioMensaje] ");
+    var _queryStringBuilder : string[] = [];
+    _queryStringBuilder.push("Exec [dbo].[usp_envioMensaje] ");
     if(id != undefined){
-      _query.push(`@id = '${id}', `);
+      _queryStringBuilder.push(`@id = '${id}', `);
     }
-    _query.push(`@mensaje = '${mensajeInfo.message}', @exito = ${mensajeInfo.exito?1:0}, @errorMensaje = '${mensajeInfo.errorMensaje}', @remitente = '${mensajeInfo.phoneFrom}', @destinatario = '${mensajeInfo.phone}' `);
-    var query = _query.join(" ");
-    console.log("Ejecutando: " + query);
+    _queryStringBuilder.push(`@mensaje = '${mensajeInfo.message}', @exito = ${mensajeInfo.exito?1:0}, @errorMensaje = '${mensajeInfo.errorMensaje}', @remitente = '${mensajeInfo.phoneFrom}', @destinatario = '${mensajeInfo.phone}' `);
+    var query = _queryStringBuilder.join(" ");
 
+    
     // Realizar consulta
-
+    var errorMensaje : string = "";
+    var idMensajeAlmacenado : string = "";
     try{
-      
       const connection = await sql.connect({
         user: settings.mssql_user,
         password: settings.mssql_pass,
@@ -38,32 +39,34 @@ class MockRepository implements LeadRepository {
           trustServerCertificate: true 
         },
       });
-
       const result = await connection.request().query(query);
 
+      //Procesar respuesta
       if(result.recordset != undefined){
-        var idMensaje : string = result.recordset[0].ID;
-        console.log(idMensaje);
-
+        idMensajeAlmacenado = result.recordset[0].ID;
       }else{
-        console.log("Resultado es nul ");
+        errorMensaje = "Error, respuesta no esperado del servidor."
       }
 
+      // Cerrar conexion
       await connection.close();
       
     }catch(err){
-      console.dir(err);
+      errorMensaje = "Error no controlado al realizar la consulta: \n" + err;
     }
 
+
     // Preparar respuesta
-    const MOCK_LEAD: Lead = {
-      uuid: "00---000",
-      message: "test",
-      phone: "00000",
-    };
+    if(errorMensaje.length > 0){
+      return Promise.resolve(errorMensaje);
+    }else{
 
-
-    return Promise.resolve(MOCK_LEAD);
+      return Promise.resolve({
+        id: idMensajeAlmacenado,
+        mensaje:mensajeInfo
+      });
+    }
+    
   }
 
 
